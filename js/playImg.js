@@ -1,101 +1,140 @@
-<!DOCTYPE HTML>
-<html lang="en">
-	<head>
-		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
-		<meta charset="UTF-8">
-		<title>One Beautiful Year With Liluś</title>
-		<link rel="stylesheet" type="text/css" href="./css/format.css">
-	</head>
+var btn = document.getElementById("heartTxt");
+btn.style.opacity = 0;
+var btnVal = 0;
 
-	<body style="margin:0px">
-		<audio loop id="bgMusic">
-			<source src="music/music.mp3" type="audio/mpeg">
-			Your browser does not support the audio.
-		</audio>
+var showTimeout;
+var previewInterval;
+var imgInterval;
+var buttonInterval;
 
-		<canvas></canvas>
+function renderMedia(src) {
+	if (src.endsWith(".mp4")) {
+		mediaBox.innerHTML = `
+			<video id="img" autoplay muted playsinline>
+				<source src="${src}" type="video/mp4">
+				Your browser does not support the video tag.
+			</video>
+		`;
+	} else {
+		mediaBox.innerHTML = `<img id="img" src="${src}" alt="memory">`;
+	}
+}
 
-		<div id="imgTxt">
-			<span id="Txt"></span><br />
-			<span id="tmp"></span>
-			<div id="mediaBox"></div>
-		</div>
+function scheduleNext(delay) {
+	clearTimeout(showTimeout);
+	showTimeout = setTimeout(showImage, delay);
+}
 
-		<div id="heartTxt">
-			<span id="clickMe">Click here ❤</span>
-			<div id="heart">
-				<button id="button" onclick="play()"></button>
-			</div>
-		</div>
+function showImage() {
+	let current = imageArray[imageIndex];
 
-		<div id="content">
-			<h2 id="together">We have been together for</h2>
-			<div id="timer">
-				<b id="d"></b> Days 
-				<b id="h"></b> Hours
-				<b id="m"></b> Minutes
-				<b id="s"></b> Seconds
-			</div>
-		</div>
+	renderMedia(current);
+	myTxt.innerHTML = txtArray[imageIndex];
 
-    	<div id="typeDiv">
-        	<span id="txt1"></span><br />
-        	<span id="txt2"></span>
-    	</div>
+	imageIndex++;
+	if (imageIndex >= len) {
+		imageIndex = 0;
+	}
 
-		<script>
-			var ok = 0;
-			var flag = 1;
-			var myTxt = document.getElementById("Txt");
-			var mediaBox = document.getElementById("mediaBox");
+	if (!current.endsWith(".mp4")) {
+		scheduleNext(3000);
+		return;
+	}
 
-			var imageArray = [
-				"pic/pic1.png",
-				"pic/pic2.png",
-				"pic/pic3.png",
-				"pic/pic4.png",
-				"pic/pic5.png",
-				"pic/pic6.mp4",
-				"pic/pic7.png",
-				"pic/pic8.png",
-				"pic/pic9.png",
-				"pic/pic10.png",
-				"pic/pic11.png",
-				"pic/pic12.png",
-				"pic/pic13.png",
-				"pic/pic14.png",
-				"pic/pic15.png",
-				"pic/pic16.mp4"
-			];
+	let video = document.querySelector("#mediaBox video");
 
-			var imageIndex = 0;
+	if (video) {
+		let fallbackUsed = false;
 
-			var txtArray = [
-				"Hi my Liluś ❤",
-				"One beautiful year with you.",
-				"This has been the most precious year of my life because of you.",
-				"With you, I feel truly valued, deeply understood, and genuinely loved.",
-				"You are kind-hearted, compassionate, and the sweetest little soul.",
-				"A little moving memory of us ❤",
-				"You made me happier, calmer, more stable, and more certain about life.",
-				"I still remember our first meeting...",
-				"The way your hands trembled from stress was the cutest thing ever.",
-				"And every time I hugged you, I felt your warmth.",
-				"One of the most beautiful parts of us is that I can always share my heart with you freely.",
-				"I will never forget 'labirento' and how much you laughed at me.",
-				"And I still remember 'Maksimilon'... the name I will never accept.",
-				"Our little memories will always be my favorite ones.",
-				"My dream is to travel the world with you and build a beautiful life together.",
-				"I loved you like the brief but breathtaking moment when cherry blossoms bloom and paint the ground pink."
-			];
+		const fallback = setTimeout(function () {
+			fallbackUsed = true;
+			scheduleNext(7000);
+		}, 1200);
 
-			var len = imageArray.length;
-			var t = 0;
-		</script>
-		
-		<script type="text/javascript" src="./js/stars.js"></script>
-		<script type="text/javascript" src="./js/typeWriter.js"></script>
-		<script type="text/javascript" src="./js/date.js"></script>
-		<script type="text/javascript" src="./js/playImg.js"></script>
-	</body>
-</html>
+		video.onloadedmetadata = function () {
+			if (fallbackUsed) return;
+			clearTimeout(fallback);
+
+			let durationMs = Math.floor(video.duration * 1000);
+
+			if (!durationMs || isNaN(durationMs)) {
+				durationMs = 7000;
+			}
+
+			durationMs = Math.max(5000, Math.min(durationMs, 12000));
+			scheduleNext(durationMs);
+		};
+
+		video.onerror = function () {
+			clearTimeout(fallback);
+			scheduleNext(7000);
+		};
+	} else {
+		scheduleNext(7000);
+	}
+}
+
+function play() {
+	let audio = document.getElementById("bgMusic");
+	if (audio && audio.paused) {
+		audio.play().catch(function(err) {
+			console.log("Audio play blocked:", err);
+		});
+	}
+
+	if (t == 0) {
+		mediaBox.innerHTML = "";
+		myTxt.innerHTML = "";
+		imageIndex = 0;
+
+		clearInterval(previewInterval);
+		clearTimeout(showTimeout);
+	}
+
+	flag = 1 - flag;
+	document.getElementById("typeDiv").style.opacity = flag;
+	document.getElementById("imgTxt").style.opacity = 1 - flag;
+
+	if (t == 0) {
+		showImage();
+	}
+	t++;
+}
+
+function preshowImage() {
+	document.getElementById("imgTxt").style.opacity = 0;
+	renderMedia(imageArray[imageIndex]);
+	myTxt.innerHTML = txtArray[imageIndex];
+
+	imageIndex++;
+	if (imageIndex >= len) {
+		imageIndex = 0;
+	}
+}
+
+function buttonFadeIn() {
+	if (btnVal < 1) {
+		btnVal += 0.025;
+		btn.style.opacity = btnVal;
+	} else {
+		clearInterval(buttonInterval);
+		if (ok == 3) {
+			ok += 1;
+		}
+	}
+}
+
+function event() {
+	previewInterval = setInterval(preshowImage, 100);
+
+	imgInterval = setInterval(function () {
+		if (ok == 3) {
+			setTimeout(function () {
+				buttonInterval = setInterval(buttonFadeIn, 50);
+			}, 1500);
+			clearInterval(imgInterval);
+		}
+	}, 50);
+}
+
+event();
